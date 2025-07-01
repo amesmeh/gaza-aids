@@ -1,27 +1,22 @@
-const mongoose = require('mongoose');
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
 
-// نموذج المستخدمين
-const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ['admin', 'representative', 'observer'], default: 'observer' },
-  name: { type: String, required: true },
-  areaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Area' },
-  createdAt: { type: Date, default: Date.now }
+// الاتصال بقاعدة البيانات (محليًا)
+mongoose.connect('mongodb://localhost:27017/aid-system', { useNewUrlParser: true, useUnifiedTopology: true });
+
+// تعريف نموذج المساعدة
+const AidSchema = new mongoose.Schema({
+  guardianNationalId: String,
+  guardianName: String,
+  areaName: String,
+  guardianPhone: String,
+  aidType: String,
+  aidDate: String
 });
+const Aid = mongoose.model('Aid', AidSchema);
 
-// نموذج المناطق
-const AreaSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
-  representativeName: { type: String, required: true },
-  representativeId: { type: String, required: true },
-  representativePhone: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج أولياء الأمور
+// تعريف نموذج ولي الأمر
 const GuardianSchema = new mongoose.Schema({
   name: { type: String, required: true },
   nationalId: { type: String, required: true, unique: true },
@@ -36,180 +31,98 @@ const GuardianSchema = new mongoose.Schema({
   originalGovernorate: String,
   originalCity: String,
   displacementAddress: String,
-  areaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: true },
+  areaId: String,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
-
-// نموذج الزوجات
-const WifeSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  nationalId: { type: String, required: true, unique: true },
-  husbandId: { type: mongoose.Schema.Types.ObjectId, ref: 'Guardian', required: true },
-  husbandNationalId: { type: String, required: true },
-  areaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Area' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج الأبناء
-const ChildSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  nationalId: { type: String, required: true, unique: true },
-  birthDate: { type: Date, required: true },
-  age: { type: Number, required: true },
-  guardianId: { type: mongoose.Schema.Types.ObjectId, ref: 'Guardian', required: true },
-  areaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Area' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج المساعدات
-const AidSchema = new mongoose.Schema({
-  guardianNationalId: { type: String, required: true },
-  guardianName: String,
-  guardianPhone: String,
-  aidType: { type: String, required: true },
-  aidDate: { type: Date, required: true },
-  areaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Area' },
-  notes: String,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج الشهداء
-const MartyrSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  nationalId: { type: String, required: true, unique: true },
-  martyrdomDate: { type: Date, required: true },
-  agentName: { type: String, required: true },
-  agentNationalId: { type: String, required: true },
-  agentPhone: { type: String, required: true },
-  relationshipToMartyr: { type: String, required: true },
-  notes: String,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج الجرحى
-const InjuredSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  nationalId: { type: String, required: true, unique: true },
-  phone: { type: String, required: true },
-  injuryDate: { type: Date, required: true },
-  injuryType: { type: String, required: true },
-  notes: String,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج البيانات الطبية
-const MedicalDataSchema = new mongoose.Schema({
-  patientName: { type: String, required: true },
-  patientNationalId: { type: String, required: true, unique: true },
-  guardianNationalId: { type: String, required: true },
-  guardianName: String,
-  diseaseType: { type: String, required: true },
-  phone: String,
-  notes: String,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج الأيتام
-const OrphanSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  nationalId: { type: String, required: true, unique: true },
-  gender: { type: String, enum: ['male', 'female'], required: true },
-  birthDate: { type: Date, required: true },
-  age: { type: Number, required: true },
-  healthStatus: { type: String, required: true },
-  educationalStage: { type: String, required: true },
-  martyrNationalId: { type: String, required: true },
-  martyrName: { type: String, required: true },
-  martyrdomDate: { type: Date, required: true },
-  maleSiblingsCount: { type: Number, default: 0 },
-  femaleSiblingsCount: { type: Number, default: 0 },
-  guardianName: { type: String, required: true },
-  guardianRelationship: { type: String, required: true },
-  address: { type: String, required: true },
-  phone: { type: String, required: true },
-  notes: String,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج الأضرار
-const DamageSchema = new mongoose.Schema({
-  guardianNationalId: { type: String, required: true },
-  guardianName: String,
-  guardianPhone: String,
-  areaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Area' },
-  damageType: { type: String, enum: ['كلي', 'جزئي'], required: true },
-  notes: String,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-// نموذج طلبات التسجيل
-const RegistrationRequestSchema = new mongoose.Schema({
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-  // بيانات ولي الأمر
-  name: { type: String, required: true },
-  nationalId: { type: String, required: true },
-  phone: { type: String, required: true },
-  gender: { type: String, enum: ['male', 'female'], required: true },
-  maritalStatus: { type: String, required: true },
-  currentJob: String,
-  residenceStatus: { type: String, enum: ['resident', 'displaced'], required: true },
-  originalGovernorate: String,
-  originalCity: String,
-  displacementAddress: String,
-  areaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: true },
-  // بيانات الزوجات والأبناء
-  wives: [{
-    name: { type: String, required: true },
-    nationalId: { type: String, required: true }
-  }],
-  children: [{
-    name: { type: String, required: true },
-    nationalId: { type: String, required: true },
-    birthDate: { type: Date, required: true },
-    gender: { type: String, enum: ['male', 'female'], required: true }
-  }],
-  notes: String,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-  reviewedAt: Date,
-  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  rejectionReason: String
-});
-
-// إنشاء النماذج
-const User = mongoose.model('User', UserSchema);
-const Area = mongoose.model('Area', AreaSchema);
 const Guardian = mongoose.model('Guardian', GuardianSchema);
-const Wife = mongoose.model('Wife', WifeSchema);
-const Child = mongoose.model('Child', ChildSchema);
-const Aid = mongoose.model('Aid', AidSchema);
-const Martyr = mongoose.model('Martyr', MartyrSchema);
-const Injured = mongoose.model('Injured', InjuredSchema);
-const MedicalData = mongoose.model('MedicalData', MedicalDataSchema);
-const Orphan = mongoose.model('Orphan', OrphanSchema);
-const Damage = mongoose.model('Damage', DamageSchema);
-const RegistrationRequest = mongoose.model('RegistrationRequest', RegistrationRequestSchema);
 
-module.exports = {
-  User,
-  Area,
-  Guardian,
-  Wife,
-  Child,
-  Aid,
-  Martyr,
-  Injured,
-  MedicalData,
-  Orphan,
-  Damage,
-  RegistrationRequest
-}; 
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// ===== ROUTES للمساعدات =====
+// جلب كل المساعدات
+app.get('/aids', async (req, res) => {
+  try {
+    const aids = await Aid.find();
+    res.json(aids);
+  } catch (error) {
+    res.status(500).json({ error: 'فشل في جلب المساعدات' });
+  }
+});
+
+// إضافة مساعدة جديدة
+app.post('/aids', async (req, res) => {
+  try {
+    const aid = new Aid(req.body);
+    await aid.save();
+    res.json(aid);
+  } catch (error) {
+    res.status(500).json({ error: 'فشل في إضافة المساعدة' });
+  }
+});
+
+// تعديل مساعدة
+app.put('/aids/:id', async (req, res) => {
+  try {
+    const aid = await Aid.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(aid);
+  } catch (error) {
+    res.status(500).json({ error: 'فشل في تحديث المساعدة' });
+  }
+});
+
+// حذف مساعدة
+app.delete('/aids/:id', async (req, res) => {
+  try {
+    await Aid.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'فشل في حذف المساعدة' });
+  }
+});
+
+// ===== ROUTES لأولياء الأمور =====
+// جلب كل أولياء الأمور
+app.get('/guardians', async (req, res) => {
+  try {
+    const guardians = await Guardian.find();
+    res.json(guardians);
+  } catch (error) {
+    res.status(500).json({ error: 'فشل في جلب أولياء الأمور' });
+  }
+});
+
+// إضافة ولي أمر جديد
+app.post('/guardians', async (req, res) => {
+  try {
+    const guardian = new Guardian(req.body);
+    await guardian.save();
+    res.json(guardian);
+  } catch (error) {
+    res.status(500).json({ error: 'فشل في إضافة ولي الأمر' });
+  }
+});
+
+// تعديل ولي أمر
+app.put('/guardians/:id', async (req, res) => {
+  try {
+    const guardian = await Guardian.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(guardian);
+  } catch (error) {
+    res.status(500).json({ error: 'فشل في تحديث ولي الأمر' });
+  }
+});
+
+// حذف ولي أمر
+app.delete('/guardians/:id', async (req, res) => {
+  try {
+    await Guardian.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'فشل في حذف ولي الأمر' });
+  }
+});
+
+app.listen(4000, () => console.log('API running on http://localhost:4000')); 
