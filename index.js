@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 
 // الاتصال بقاعدة البيانات (محليًا)
-mongoose.connect('mongodb://localhost:27017/aid-system', { useNewUrlParser: true, useUnifiedTopology: true });
+   mongoose.connect(process.env.MONGODB_URI, { /* ... */ }); { useNewUrlParser: true, useUnifiedTopology: true });
 
 // تعريف نموذج المساعدة
 const AidSchema = new mongoose.Schema({
